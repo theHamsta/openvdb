@@ -131,11 +131,15 @@ if(NANOVDB_USE_GLFW)
         list(
           APPEND
           IMGUI_SOURCE_FILES
+          ${imgui_SOURCE_DIR}/imgui.cpp
+          ${imgui_SOURCE_DIR}/imgui_draw.cpp
+          ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+          ${imgui_SOURCE_DIR}/imgui_tables.cpp
           ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
           ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.h
           ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
 
-        add_library(imgui ${IMGUI_SOURCE_FILES})
+        add_library(imgui SHARED ${IMGUI_SOURCE_FILES})
 
         target_include_directories(
           imgui PRIVATE ${imgui_SOURCE_DIR} ${NANOVDB_GLAD_INCLUDE_DIRECTORY})
@@ -169,7 +173,7 @@ if(TRUE)
     VIEWER_SOURCES
     viewer/nanovdb_viewer
     viewer/RenderLauncherC99impl.c
-    viewer/nanovdb_viewer.cpp
+    #viewer/nanovdb_viewer.cpp
     viewer/StringUtils.h
     viewer/StringUtils.cpp
     viewer/GridAssetUrl.h
@@ -238,7 +242,7 @@ if(TRUE)
          ${VIEWER_OPTIX_CODE})
   endif()
 
-  add_executable(nanovdb_viewer ${VIEWER_SOURCES} ${VIEWER_AGNOSTIC_CODE})
+  add_library(nanovdb_viewer SHARED ${VIEWER_SOURCES} ${VIEWER_AGNOSTIC_CODE})
 
   set_source_files_properties(${VIEWER_OPTIX_CODE} PROPERTIES HEADER_FILE_ONLY
                                                               TRUE)

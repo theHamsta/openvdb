@@ -256,7 +256,7 @@ if(NOT USE_EMSCRIPTEN_TOOLCHAIN)
   list(APPEND GLAD_SOURCE_FILES ${GLAD_SOURCE_DIR}/src/glad.c
        ${GLAD_SOURCE_DIR}/include/glad/glad.h)
 
-  add_library(glad ${GLAD_SOURCE_FILES})
+   add_library(glad SHARED ${GLAD_SOURCE_FILES})
 
   target_include_directories(glad PRIVATE ${GLAD_SOURCE_DIR}/include)
 
