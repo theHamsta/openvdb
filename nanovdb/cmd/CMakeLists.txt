@@ -269,7 +269,7 @@ if(TRUE)
 
   target_compile_definitions(
     nanovdb_viewer
-    PRIVATE "${NANOVDB_USE_GLFW_FLAG}"
+    PUBLIC "${NANOVDB_USE_GLFW_FLAG}"
             "${NANOVDB_USE_GLAD_FLAG}"
             "${NANOVDB_USE_CUDA_FLAG}"
             "${NANOVDB_USE_OPENCL_FLAG}"
@@ -296,7 +296,7 @@ if(TRUE)
 
   target_link_libraries(
     nanovdb_viewer
-    PRIVATE libnanovdb
+    PUBLIC libnanovdb
             ${NANOVDB_GLAD_LINK_LIBRARY} # optional
             ${NANOVDB_GLFW_LINK_LIBRARY} # optional
             ${NANOVDB_IMGUI} # optional
