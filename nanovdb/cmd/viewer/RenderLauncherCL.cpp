@@ -402,8 +402,7 @@ std::shared_ptr<RenderLauncherCL::Resource> RenderLauncherCL::ensureResource(con
         ss << std::string("#define VALUETYPE ") << valueTypeStr << "\n";
         ss << std::string("#define SIZEOF_VALUETYPE ") << sizeofValueType << "\n";
 
-        std::string includeFilePath = std::string(__FILE__);
-        includeFilePath = includeFilePath.substr(0, includeFilePath.find_last_of('/')).substr(0, includeFilePath.find_last_of('\\')) + "/";
+        std::string includeFilePath = VIEWER_DIRECTORY;
 
         ss << fileToString(includeFilePath + g_kKernelString_Platform_h);
         ss << fileToString(includeFilePath + g_kKernelString_HDDA_h);
@@ -418,6 +417,9 @@ std::shared_ptr<RenderLauncherCL::Resource> RenderLauncherCL::ensureResource(con
         auto codeStr = new char[ss.str().length() + 1];
         std::memset(codeStr, 0, ss.str().length() + 1);
         std::memcpy(codeStr, ss.str().c_str(), ss.str().length());
+        std::cout << codeStr << std::endl;
+        
+        
 
         cl_program program = clCreateProgramWithSource(contextCL, 1, (const char**)&codeStr, NULL, &err);
         NANOVDB_CL_SAFE_CALL(err);

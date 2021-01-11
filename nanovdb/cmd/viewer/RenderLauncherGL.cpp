@@ -164,8 +164,7 @@ bool RenderLauncherGL::ensureProgramResource(const std::shared_ptr<Resource>& re
     ss << std::string("#define VALUETYPE ") << valueTypeStr << "\n";
     ss << std::string("#define SIZEOF_VALUETYPE ") << sizeofValueType << "\n";
 
-    std::string includeFilePath = std::string(__FILE__);
-    includeFilePath = includeFilePath.substr(0, includeFilePath.find_last_of('/')).substr(0, includeFilePath.find_last_of('\\')) + "/";
+    std::string includeFilePath = VIEWER_DIRECTORY;
 
     try {
         ss << fileToString(includeFilePath + g_kKernelString_Platform_h);

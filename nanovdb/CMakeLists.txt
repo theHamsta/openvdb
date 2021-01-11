@@ -52,7 +52,7 @@ option(NANOVDB_BUILD_EXAMPLES "Build examples" ON)
 option(NANOVDB_BUILD_BENCHMARK "Build benchmark" ON)
 option(NANOVDB_BUILD_DOCS "Build docs" OFF)
 option(NANOVDB_BUILD_TOOLS "Build command-line tools" ON)
-option(NANOVDB_CUDA_KEEP_PTX "Keep CUDA PTX" OFF)
+option(NANOVDB_CUDA_KEEP_PTX "Keep CUDA PTX" ON)
 
 option(NANOVDB_USE_INTRINSICS "Build with hardware intrinsics support" ON)
 option(NANOVDB_USE_OPENVDB "Build with OpenVDB support" ON)

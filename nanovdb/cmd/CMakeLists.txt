@@ -2,6 +2,8 @@ option(NANOVDB_USE_EGL "Build with EGL support" OFF)
 option(NANOVDB_USE_NATIVEFILEDIALOG "Build with nativefiledialog support" OFF)
 option(NANOVDB_USE_GLFW "Build interactive renderer" ON)
 
+add_compile_definitions(VIEWER_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/viewer/")
+
 # -----------------------------------------------------------------------
 # workaround for win32 bug when nvcc "--keep" is used.
 if(WIN32 AND NANOVDB_CUDA_KEEP_PTX)
@@ -251,7 +253,7 @@ if(TRUE)
 
   target_include_directories(
     nanovdb_viewer
-    PRIVATE ${NANOVDB_INCLUDE_DIR}
+    PUBLIC ${NANOVDB_INCLUDE_DIR}
             ${NanoVDB_TOP_LEVEL_DIR}/external
             ${TBB_INCLUDE_DIRECTORY} # optional
             ${CUDA_INCLUDE_DIRECTORY} # optional
@@ -314,7 +316,7 @@ if(TRUE)
   )
 
   if(APPLE)
-    target_link_libraries(nanovdb_viewer PRIVATE "-framework OpenGL")
+    target_link_libraries(nanovdb_viewer PUBLIC "-framework OpenGL")
   endif()
 
   install(TARGETS nanovdb_viewer DESTINATION bin)
