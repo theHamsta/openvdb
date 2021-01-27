@@ -299,7 +299,7 @@ static std::string g_nvrtcLog;
 #define NANOVDB_CUDA_NVRTC_OPTIONS \
     "--std=c++11", \
         "-arch", \
-        "compute_60", \
+        "compute_50", \
         "-use_fast_math", \
         "-lineinfo", \
         "-default-device", \
