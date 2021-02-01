@@ -1,5 +1,5 @@
-option(NANOVDB_USE_EGL "Build with EGL support" OFF)
-option(NANOVDB_USE_NATIVEFILEDIALOG "Build with nativefiledialog support" OFF)
+option(NANOVDB_USE_EGL "Build with EGL support" ON)
+option(NANOVDB_USE_NATIVEFILEDIALOG "Build with nativefiledialog support" ON)
 option(NANOVDB_USE_GLFW "Build interactive renderer" ON)
 
 add_compile_definitions(VIEWER_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/viewer/")
