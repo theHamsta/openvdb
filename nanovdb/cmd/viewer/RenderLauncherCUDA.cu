@@ -23,7 +23,7 @@
 #include "FrameBufferGL.h"
 #endif
 
-#if defined(__CUDACC__)
+//#if defined(__CUDACC__)
 #if defined(NANOVDB_USE_OPENGL)
 #include <cuda_gl_interop.h>
 #endif
@@ -274,4 +274,4 @@ bool RenderLauncherCUDA::render(MaterialClass method, int width, int height, Fra
 }
 
 #endif
-#endif // NANOVDB_USE_CUDA
+//#endif // NANOVDB_USE_CUDA

@@ -1,6 +1,8 @@
-option(NANOVDB_USE_EGL "Build with EGL support" OFF)
-option(NANOVDB_USE_NATIVEFILEDIALOG "Build with nativefiledialog support" OFF)
+option(NANOVDB_USE_EGL "Build with EGL support" ON)
+option(NANOVDB_USE_NATIVEFILEDIALOG "Build with nativefiledialog support" ON)
 option(NANOVDB_USE_GLFW "Build interactive renderer" ON)
+
+add_compile_definitions(VIEWER_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/viewer/")
 
 # -----------------------------------------------------------------------
 # workaround for win32 bug when nvcc "--keep" is used.
@@ -127,6 +129,7 @@ if(NANOVDB_USE_GLFW)
 
         set(NANOVDB_USE_IMGUI_FLAG "NANOVDB_USE_IMGUI")
 
+        file(GLOB IMGUI_SOURCE_FILES ${imgui_SOURCE_DIR}/*.cpp)
         list(
           APPEND
           IMGUI_SOURCE_FILES
@@ -190,6 +193,7 @@ if(TRUE)
     viewer/RenderLevelSetUtils.h
     viewer/RenderFogVolumeUtils.h
     viewer/RenderGridUtils.h
+    viewer/RenderVoxelUtils.h
     viewer/RenderPointsUtils.h
     viewer/RenderLauncherImpl.h
     viewer/RenderLauncher.h
@@ -202,7 +206,10 @@ if(TRUE)
     viewer/AssetLoader.h
     viewer/AssetLoader.cpp
     viewer/CallbackPool.h
-    viewer/CallbackPool.cpp)
+    viewer/CallbackPool.cpp
+    viewer/primitives.h
+    viewer/primitives.cpp
+    )
 
   if(NOT (NANOVDB_GLFW_LINK_LIBRARY AND NANOVDB_GLAD_LINK_LIBRARY)
      AND NOT USE_EMSCRIPTEN_TOOLCHAIN)
@@ -238,6 +245,7 @@ if(TRUE)
   endif()
 
   add_library(nanovdb_viewer SHARED ${VIEWER_SOURCES} ${VIEWER_AGNOSTIC_CODE})
+  add_executable(nanovdb_viewer_exe viewer/nanovdb_viewer.cpp ${VIEWER_SOURCES} ${VIEWER_AGNOSTIC_CODE})
 
   set_source_files_properties(${VIEWER_OPTIX_CODE} PROPERTIES HEADER_FILE_ONLY
                                                               TRUE)
@@ -246,7 +254,7 @@ if(TRUE)
 
   target_include_directories(
     nanovdb_viewer
-    PRIVATE ${NANOVDB_INCLUDE_DIR}
+    PUBLIC ${NANOVDB_INCLUDE_DIR}
             ${NanoVDB_TOP_LEVEL_DIR}/external
             ${TBB_INCLUDE_DIRECTORY} # optional
             ${CUDA_INCLUDE_DIRECTORY} # optional
@@ -258,36 +266,79 @@ if(TRUE)
             ${NANOVDB_OPENGLES_INCLUDE_DIR} # optional
             ${EGL_INCLUDE_DIRECTORY} # optional
             ${NANOVDB_NFD_INCLUDE_DIRECTORY} # optional
+            ${NANOVDB_OGT_INCLUDE_DIRECTORY} # optional
+            ../examples/ex_vox_to_nanovdb/
+  )
+  target_include_directories(
+    nanovdb_viewer_exe
+    PUBLIC ${NANOVDB_INCLUDE_DIR}
+            ${NanoVDB_TOP_LEVEL_DIR}/external
+            ${TBB_INCLUDE_DIRECTORY} # optional
+            ${CUDA_INCLUDE_DIRECTORY} # optional
+            ${OPENCL_INCLUDE_DIRECTORY} # optional
+            ${OPENGL_INCLUDE_DIRECTORY} # optional
+            ${NANOVDB_OPTIX_INCLUDE_DIRECTORY} # optional
+            ${imgui_SOURCE_DIR} # optional
+            ${NANOVDB_GLAD_INCLUDE_DIRECTORY} # optional
+            ${NANOVDB_OPENGLES_INCLUDE_DIR} # optional
+            ${EGL_INCLUDE_DIRECTORY} # optional
+            ${NANOVDB_NFD_INCLUDE_DIRECTORY} # optional
+            ${NANOVDB_OGT_INCLUDE_DIRECTORY} # optional
+            ../examples/ex_vox_to_nanovdb/
   )
 
   target_compile_definitions(
     nanovdb_viewer
-    PRIVATE "-D${NANOVDB_USE_GLFW_FLAG}"
-            "-D${NANOVDB_USE_GLAD_FLAG}"
-            "-D${NANOVDB_USE_CUDA_FLAG}"
-            "-D${NANOVDB_USE_OPENCL_FLAG}"
-            "-D${NANOVDB_USE_OPTIX_FLAG}"
-            "-DNANOVDB_OPTIX_RTC_OPTIX_DIR=\"${OptiX_INCLUDE_DIR}\""
-            "-DNANOVDB_OPTIX_RTC_CUDA_DIR=\"${CUDA_INCLUDE_DIRECTORY}\""
-            "-D${NANOVDB_USE_TBB_FLAG}"
-            "-D${NANOVDB_USE_BLOSC_FLAG}"
-            "-D${NANOVDB_USE_ZLIB_FLAG}"
-            "-D${NANOVDB_USE_OPENVDB_FLAG}"
-            "-D${NANOVDB_USE_IMGUI_FLAG}"
-            "-DNANOVDB_USE_IMGUI_DOCKING"
-            "-D${NANOVDB_USE_OPENGL_FLAG}"
-            "-D${NANOVDB_USE_EGL_FLAG}"
-            "-D${NANOVDB_VIEWER_USE_GLES_FLAG}"
-            "-D${NANOVDB_USE_NFD_FLAG}")
+    PUBLIC "${NANOVDB_USE_GLFW_FLAG}"
+            "${NANOVDB_USE_GLAD_FLAG}"
+            "${NANOVDB_USE_CUDA_FLAG}"
+            "${NANOVDB_USE_OPENCL_FLAG}"
+            "${NANOVDB_USE_OPTIX_FLAG}"
+            "NANOVDB_OPTIX_RTC_OPTIX_DIR=\"${OptiX_INCLUDE_DIR}\""
+            "NANOVDB_OPTIX_RTC_CUDA_DIR=\"${CUDA_INCLUDE_DIRECTORY}\""
+            "${NANOVDB_USE_TBB_FLAG}"
+            "${NANOVDB_USE_BLOSC_FLAG}"
+            "${NANOVDB_USE_ZLIB_FLAG}"
+            "${NANOVDB_USE_OPENVDB_FLAG}"
+            "${NANOVDB_USE_IMGUI_FLAG}"
+            "NANOVDB_USE_IMGUI_DOCKING"
+            "${NANOVDB_USE_OPENGL_FLAG}"
+            "${NANOVDB_USE_EGL_FLAG}"
+            "${NANOVDB_VIEWER_USE_GLES_FLAG}"
+            "${NANOVDB_USE_NFD_FLAG}"
+            "${NANOVDB_USE_MAGICAVOXEL_FLAG}"
+            )
+  target_compile_definitions(
+    nanovdb_viewer_exe
+    PUBLIC "${NANOVDB_USE_GLFW_FLAG}"
+            "${NANOVDB_USE_GLAD_FLAG}"
+            "${NANOVDB_USE_CUDA_FLAG}"
+            "${NANOVDB_USE_OPENCL_FLAG}"
+            "${NANOVDB_USE_OPTIX_FLAG}"
+            "NANOVDB_OPTIX_RTC_OPTIX_DIR=\"${OptiX_INCLUDE_DIR}\""
+            "NANOVDB_OPTIX_RTC_CUDA_DIR=\"${CUDA_INCLUDE_DIRECTORY}\""
+            "${NANOVDB_USE_TBB_FLAG}"
+            "${NANOVDB_USE_BLOSC_FLAG}"
+            "${NANOVDB_USE_ZLIB_FLAG}"
+            "${NANOVDB_USE_OPENVDB_FLAG}"
+            "${NANOVDB_USE_IMGUI_FLAG}"
+            "NANOVDB_USE_IMGUI_DOCKING"
+            "${NANOVDB_USE_OPENGL_FLAG}"
+            "${NANOVDB_USE_EGL_FLAG}"
+            "${NANOVDB_VIEWER_USE_GLES_FLAG}"
+            "${NANOVDB_USE_NFD_FLAG}"
+            "${NANOVDB_USE_MAGICAVOXEL_FLAG}"
+            )
+
 
   if(WIN32)
     target_compile_definitions(nanovdb_viewer
-                               PRIVATE "-D_CRT_SECURE_NO_WARNINGS")
+                               PRIVATE "_CRT_SECURE_NO_WARNINGS")
   endif()
 
   target_link_libraries(
     nanovdb_viewer
-    PRIVATE libnanovdb
+    PUBLIC libnanovdb
             ${NANOVDB_GLAD_LINK_LIBRARY} # optional
             ${NANOVDB_GLFW_LINK_LIBRARY} # optional
             ${NANOVDB_IMGUI} # optional
@@ -297,7 +348,25 @@ if(TRUE)
             ${NANOVDB_BLOSC} # optional
             ${NANOVDB_ZLIB} # optional
             ${NANOVDB_OPENVDB} # optional
-            ${NANOVDB_OPTIX}
+            ${NANOVDB_OPTIX_LINK_LIBRARY} # optional
+            ${NVRTC_LINK_LIBRARY} # optional
+            ${NANOVDB_OPENGLES_LIBRARIES} # optional
+            ${NANOVDB_EGL} # optional
+            ${NANOVDB_NFD_LINK_LIBRARY} # optional
+  )
+  target_link_libraries(
+    nanovdb_viewer_exe
+    PUBLIC libnanovdb
+            ${NANOVDB_GLAD_LINK_LIBRARY} # optional
+            ${NANOVDB_GLFW_LINK_LIBRARY} # optional
+            ${NANOVDB_IMGUI} # optional
+            ${NANOVDB_OPENGL} # optional
+            ${NANOVDB_OPENCL} # optional
+            ${NANOVDB_TBB} # optional
+            ${NANOVDB_BLOSC} # optional
+            ${NANOVDB_ZLIB} # optional
+            ${NANOVDB_OPENVDB} # optional
+            ${NANOVDB_OPTIX_LINK_LIBRARY} # optional
             ${NVRTC_LINK_LIBRARY} # optional
             ${NANOVDB_OPENGLES_LIBRARIES} # optional
             ${NANOVDB_EGL} # optional
@@ -305,15 +374,23 @@ if(TRUE)
   )
 
   if(APPLE)
-    target_link_libraries(nanovdb_viewer PRIVATE "-framework OpenGL")
+    target_link_libraries(nanovdb_viewer PUBLIC "-framework OpenGL")
   endif()
 
   install(TARGETS nanovdb_viewer DESTINATION bin)
+  set_property(TARGET nanovdb_viewer PROPERTY CUDA_ARCHITECTURES 50)
+  set_property(TARGET nanovdb_viewer_exe PROPERTY CUDA_ARCHITECTURES 50)
 
   if(USE_EMSCRIPTEN_TOOLCHAIN)
 
     set_target_properties(
       nanovdb_viewer
+      PROPERTIES
+        LINK_FLAGS
+        "-O2 -s ASSERTIONS=1 -s SAFE_HEAP=1 -s USE_GLFW=3 -s USE_WEBGL2=1 -s ALLOW_MEMORY_GROWTH=1"
+    )
+    set_target_properties(
+      nanovdb_viewer_exe
       PROPERTIES
         LINK_FLAGS
         "-O2 -s ASSERTIONS=1 -s SAFE_HEAP=1 -s USE_GLFW=3 -s USE_WEBGL2=1 -s ALLOW_MEMORY_GROWTH=1"
