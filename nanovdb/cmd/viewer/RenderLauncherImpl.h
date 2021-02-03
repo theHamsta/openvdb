@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <string>
 #include <chrono>
+#include <limits>
 #include "RenderLauncher.h"
 #include "RenderFogVolumeUtils.h"
 #include "RenderLevelSetUtils.h"
@@ -358,6 +359,7 @@ public:
     std::string name() const override { return "cuda"; }
 
     int getPriority() const override { return 20; }
+    void setMaxNumResources(int64_t value) override {  mMaxStoredGridResources = value;  }
 
     ~RenderLauncherCUDA() override;
 
@@ -379,12 +381,15 @@ public:
     };
 
     std::shared_ptr<ImageResource> ensureImageResource();
+
+    void removeGridResource(const nanovdb::GridHandle<>* gridHdl);
     std::shared_ptr<GridResource>  ensureGridResource(const nanovdb::GridHandle<>* gridHdl);
     void*                          mapCUDA(int access, const std::shared_ptr<ImageResource>& resource, FrameBufferBase* imgBuffer, void* stream = 0);
     void                           unmapCUDA(const std::shared_ptr<ImageResource>& resource, FrameBufferBase* imgBuffer, void* stream = 0);
 
     std::shared_ptr<ImageResource>                       mImageResource;
     std::map<const void*, std::shared_ptr<GridResource>> mGridResources;
+    int64_t mMaxStoredGridResources = std::numeric_limits<int64_t>::max();
 };
 #endif
 

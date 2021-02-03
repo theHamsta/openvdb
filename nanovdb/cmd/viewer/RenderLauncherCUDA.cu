@@ -113,17 +113,35 @@ std::shared_ptr<RenderLauncherCUDA::ImageResource> RenderLauncherCUDA::ensureIma
 
     return resource;
 }
+
+void RenderLauncherCUDA::removeGridResource(const nanovdb::GridHandle<>* gridHdl)
+{
+    auto it = mGridResources.find(gridHdl);
+    if (it != mGridResources.end()) {
+        auto resource = it->second;
+        cudaFree(resource->mDeviceGrid);
+        resource->mDeviceGrid = nullptr;
+        mGridResources.erase(it);
+    }
+}
+
 std::shared_ptr<RenderLauncherCUDA::GridResource> RenderLauncherCUDA::ensureGridResource(const nanovdb::GridHandle<>* gridHdl)
 {
     std::shared_ptr<GridResource> resource;
-    auto                      it = mGridResources.find(gridHdl);
+    auto                          it = mGridResources.find(gridHdl);
     if (it != mGridResources.end()) {
         resource = it->second;
     } else {
-        std::cout << "Initializing CUDA grid["<< gridHdl->gridMetaData()->gridName() <<"] resource..." << std::endl;
+        std::cout << "Initializing CUDA grid[" << gridHdl->gridMetaData()->gridName() << "] resource..." << std::endl;
 
         resource = std::make_shared<GridResource>();
         mGridResources.insert(std::make_pair(gridHdl, resource));
+        if (mGridResources.size() > mMaxStoredGridResources) {
+            auto it = mGridResources.begin();
+            if (it != mGridResources.find(gridHdl)) {
+                removeGridResource((const nanovdb::GridHandle<>*)it->first);
+            }
+        }
 
         NANOVDB_CUDA_SAFE_CALL(cudaMalloc((void**)&resource->mDeviceGrid, gridHdl->size()));
         NANOVDB_CUDA_SAFE_CALL(cudaMemcpy(resource->mDeviceGrid, gridHdl->data(), gridHdl->size(), cudaMemcpyHostToDevice));
@@ -259,9 +277,9 @@ bool RenderLauncherCUDA::render(MaterialClass method, int width, int height, Fra
         return false;
     }
 
-    PlatformLauncherCUDA methodLauncher(this);    
+    PlatformLauncherCUDA methodLauncher(this);
     launchRender(methodLauncher, method, width, height, imgPtr, numAccumulations, grids, sceneParams, materialParams);
-    
+
     unmapCUDA(imageResource, imgBuffer);
 
     if (stats) {

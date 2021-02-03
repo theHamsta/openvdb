@@ -46,7 +46,8 @@ public:
 
     virtual std::string name() const = 0;
 
-    virtual int getPriority() const { return 0; }
+    virtual int  getPriority() const { return 0; }
+    virtual void setMaxNumResources(int64_t value) {}
 
     virtual bool render(MaterialClass method, int width, int height, FrameBufferBase* imgBuffer, int numAccumulations, int numGrids, const GridRenderParameters* grids, const SceneRenderParameters& sceneParams, const MaterialParameters& materialParams, RenderStatistics* stats = nullptr) = 0;
 };
@@ -64,8 +65,14 @@ public:
 
     int size() const { return (int)mImpls.size(); }
 
-    int         getPlatformIndexFromName(std::string name) const;
-    std::string getNameForPlatformIndex(int i) const;
+    int          getPlatformIndexFromName(std::string name) const;
+    std::string  getNameForPlatformIndex(int i) const;
+    virtual void setMaxNumResources(int64_t value)
+    {
+        for (auto& imp : mImpls) {
+            imp->setMaxNumResources(value);
+        }
+    }
 
     std::vector<std::string> getPlatformNames() const;
 

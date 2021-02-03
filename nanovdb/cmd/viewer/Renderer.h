@@ -118,6 +118,7 @@ public:
     std::string    addSceneNode(const std::string& nodeName = "", bool makeUnique = true);
     void           setSceneNodeGridAttachment(const std::string& nodeName, int attachmentIndex, const GridAssetUrl& url);
     void           addGridAsset(const GridAssetUrl& url);
+    void           removeGridAsset(const GridAssetUrl& url);
     std::string    updateFilePathWithFrame(const std::string& filePath, int frame) const;
     SceneNode::Ptr findNode(const std::string& name);
     SceneNode::Ptr findNodeByIndex(const int i);
