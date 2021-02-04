@@ -21,10 +21,13 @@
 #include <chrono>
 #include <cmath>
 #include <unordered_set>
-
 #include "StringUtils.h"
 #include "Renderer.h"
 #include "RenderLauncher.h"
+
+#ifdef NANOVDB_USE_OPENVDB
+#include <openvdb/openvdb.h>
+#endif
 
 RendererParams::RendererParams()
 {
@@ -457,6 +460,13 @@ void RendererBase::addGridAsset(const GridAssetUrl& url)
         mGridManager.addGrid(url.url(), url.gridName());
     }
 }
+
+#ifdef NANOVDB_USE_OPENVDB
+void RendererBase::addGrid(const openvdb::GridBase::Ptr& grid, const std::string& id)
+{
+    mGridManager.addGrid(grid, id);
+}
+#endif
 
 void RendererBase::resetAccumulationBuffer()
 {

@@ -24,6 +24,10 @@
 #include "RenderLauncher.h"
 #include "GridManager.h"
 
+#ifdef NANOVDB_USE_OPENVDB
+#include <openvdb/openvdb.h>
+#endif
+
 // struct representing a scene graph node's grid attachment.
 struct SceneNodeGridAttachment
 {
@@ -118,6 +122,9 @@ public:
     std::string    addSceneNode(const std::string& nodeName = "", bool makeUnique = true);
     void           setSceneNodeGridAttachment(const std::string& nodeName, int attachmentIndex, const GridAssetUrl& url);
     void           addGridAsset(const GridAssetUrl& url);
+#ifdef NANOVDB_USE_OPENVDB
+    void           addGrid(const openvdb::GridBase::Ptr& grid, const std::string& id);
+#endif
     void           removeGridAsset(const GridAssetUrl& url);
     std::string    updateFilePathWithFrame(const std::string& filePath, int frame) const;
     SceneNode::Ptr findNode(const std::string& name);

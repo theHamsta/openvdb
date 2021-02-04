@@ -256,6 +256,38 @@ void GridManager::addGrid(const std::string& url, const std::string& gridName)
     }
 }
 
+void GridManager::addGrid(const std::string& url, const std::string& gridName)
+{
+    // check to see if this "url & grid" asset is resident.
+    bool isResident = false;
+
+    auto asset = ensureAsset(url);
+    {
+        // if we specified a grid then check if it is already resident...
+        if (gridName.length() > 0) {
+            std::lock_guard<std::recursive_mutex> scopedLock(asset->mGridAssetsMutex);
+            auto                                  git = asset->mGridAssets.find(gridName);
+            if (git != asset->mGridAssets.end() && git->second->mStatus != AssetGridStatus::kError) {
+                isResident = true;
+            }
+        }
+    }
+
+    // the grid is not resident or errored, so make a request.
+    if (!isResident) {
+#if 0
+        // this REALLY slows down the main thread. So probably not worth it.
+        if (urlGetScheme(url) == "file") {
+            addGridsMetaFromLocalFile(url, gridName, urlGetPath(url));
+        }
+#endif
+        AssetRequest::Ptr request(new GridAssetRequest(this, asset, url, gridName));
+        if (mLoader->load(request)) {
+            addEventMessage(EventMessage{EventMessage::Type::kInfo, "Requesting asset(" + url + ") grid(" + gridName + ")"});
+        }
+    }
+}
+
 std::tuple<nanovdb::BBoxR, std::shared_ptr<nanovdb::GridHandle<>>> GridManager::getGrid(const std::string& url, const std::string& gridName) const
 {
     std::lock_guard<std::recursive_mutex> scopedLock(mAssetsMutex);

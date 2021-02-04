@@ -22,6 +22,10 @@
 #include "GridAssetUrl.h"
 #include <nanovdb/util/GridHandle.h>
 
+#ifdef NANOVDB_USE_OPENVDB
+#include <openvdb/openvdb.h>
+#endif
+
 class GridManager
 {
 public:
@@ -70,6 +74,9 @@ public:
     void                                                               initialize();
     void                                                               shutdown();
     void                                                               addGrid(const std::string& url, const std::string& gridName);
+#ifdef NANOVDB_USE_OPENVDB
+    void                                                               addGrid(const openvdb::GridBase::Ptr& Grid, const std::string& id);
+#endif
     std::tuple<nanovdb::BBoxR, std::shared_ptr<nanovdb::GridHandle<>>> getGrid(const std::string& url, const std::string& gridName) const;
     AssetStatusInfoType                                                getGridNameStatusInfo() const;
     size_t                                                             getAssetStatusEvents(const std::string& url, std::vector<int>& eventIndices) const;
