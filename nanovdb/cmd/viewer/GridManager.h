@@ -86,6 +86,7 @@ public:
     bool                     addGridsFromInternal(const std::string& url, const std::string& params);
     bool                     addGridsFromLocalFile(const std::string& url, const std::string& gridName, const std::string& localFilename);
     bool                     addGridsMetaFromLocalFile(const std::string& url, const std::string& gridName, const std::string& localFilename);
+    bool                     addGridFromMemory(const openvdb::GridBase::Ptr& grid, const std::string& url);
     size_t                   addEventMessage(const EventMessage& s);
     std::vector<std::string> getGridsNamesFromLocalFile(const std::string& url, const std::string& localFilename);
 
@@ -101,4 +102,5 @@ private:
     mutable std::recursive_mutex      mEventListMutex;
 
     friend class GridAssetRequest;
+    friend class GridFromMemoryRequest;
 };

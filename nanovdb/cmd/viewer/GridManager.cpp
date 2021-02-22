@@ -56,7 +56,6 @@ static nanovdb::GridHandle<> createInternalGrid(std::string typeName, std::strin
     } else if (typeName == "fog_box_100") {
         return nanovdb::createFogVolumeBox(100.0f, 100.0f, 100.0f, nanovdb::Vec3d(0), 1.0f, 3.0f, nanovdb::Vec3R(0), typeName);
     } else if (typeName == "fog_mandelbulb_100") {
-
         nanovdb::GridBuilder<float> builder(0);
         auto                        acc = builder.getAccessor();
 
@@ -73,7 +72,7 @@ static nanovdb::GridHandle<> createInternalGrid(std::string typeName, std::strin
                 }
             }
         }
-        return builder.getHandle<>(1.0f, nanovdb::Vec3d(0), typeName, nanovdb::GridClass::FogVolume);      
+        return builder.getHandle<>(1.0f, nanovdb::Vec3d(0), typeName, nanovdb::GridClass::FogVolume);
     } else if (typeName == "fog_octahedron_100") {
         return nanovdb::createFogVolumeOctahedron(100.0f, nanovdb::Vec3d(0), 1.0f, 3.0f, nanovdb::Vec3R(0), typeName);
     } else if (typeName == "points_sphere_100") {
@@ -140,6 +139,51 @@ private:
             hasError = true;
             std::lock_guard<std::recursive_mutex> scopedLock(mAsset->mEventMutex);
             mAsset->mEvents.push_back(mManager->addEventMessage({GridManager::EventMessage::Type::kError, "Can't load grid \"" + mGridName + "\" from \"" + url + "\"; " + e.what()}));
+        }
+
+        if (hasError) {
+            mAsset->mHasError = true;
+        }
+
+        return !hasError;
+    }
+};
+
+class GridFromMemoryRequest : public AssetRequest
+{
+public:
+    GridFromMemoryRequest(GridManager* mgr, GridManager::Asset::Ptr asset, std::string url, const openvdb::GridBase::Ptr& grid)
+        : AssetRequest(url)
+        , mManager(mgr)
+        , mAsset(asset)
+        , mGrid(grid)
+    {
+    }
+
+private:
+    GridManager*                 mManager;
+    GridManager::Asset::Ptr      mAsset;
+    const openvdb::GridBase::Ptr mGrid;
+
+    std::string getRequestKey() const override
+    {
+        return getUrl() + "|" + mGrid->getName();
+    }
+
+    bool onResponse(AssetResponse::Ptr response) override
+    {
+        std::string url = getUrl();
+        bool        hasError = false;
+        try {
+            hasError = !mManager->addGridFromMemory(mGrid, url);
+        }
+        catch (const std::exception& e) {
+            // something went wrong on import.
+            hasError = true;
+            std::lock_guard<std::recursive_mutex> scopedLock(mAsset->mEventMutex);
+            mAsset->mEvents.push_back(mManager->addEventMessage(
+                {GridManager::EventMessage::Type::kError,
+                 "Can't load grid \"" + mGrid->getName() + "\" from \"" + url + "\"; " + e.what()}));
         }
 
         if (hasError) {
@@ -256,37 +300,31 @@ void GridManager::addGrid(const std::string& url, const std::string& gridName)
     }
 }
 
-void GridManager::addGrid(const std::string& url, const std::string& gridName)
+#ifdef NANOVDB_USE_OPENVDB
+void GridManager::addGrid(const openvdb::GridBase::Ptr& grid, const std::string& id)
 {
     // check to see if this "url & grid" asset is resident.
     bool isResident = false;
 
-    auto asset = ensureAsset(url);
+    auto asset = ensureAsset(id);
     {
-        // if we specified a grid then check if it is already resident...
-        if (gridName.length() > 0) {
-            std::lock_guard<std::recursive_mutex> scopedLock(asset->mGridAssetsMutex);
-            auto                                  git = asset->mGridAssets.find(gridName);
-            if (git != asset->mGridAssets.end() && git->second->mStatus != AssetGridStatus::kError) {
-                isResident = true;
-            }
+        std::lock_guard<std::recursive_mutex> scopedLock(asset->mGridAssetsMutex);
+        auto                                  git = asset->mGridAssets.find(id);
+        if (git != asset->mGridAssets.end() && git->second->mStatus != AssetGridStatus::kError) {
+            isResident = true;
         }
     }
 
-    // the grid is not resident or errored, so make a request.
+    //addGridFromMemory(grid, id);
+    //the grid is not resident or errored, so make a request.
     if (!isResident) {
-#if 0
-        // this REALLY slows down the main thread. So probably not worth it.
-        if (urlGetScheme(url) == "file") {
-            addGridsMetaFromLocalFile(url, gridName, urlGetPath(url));
-        }
-#endif
-        AssetRequest::Ptr request(new GridAssetRequest(this, asset, url, gridName));
+        AssetRequest::Ptr request(new GridFromMemoryRequest(this, asset, id, grid));
         if (mLoader->load(request)) {
-            addEventMessage(EventMessage{EventMessage::Type::kInfo, "Requesting asset(" + url + ") grid(" + gridName + ")"});
+            addEventMessage(EventMessage{EventMessage::Type::kInfo, "Requesting asset(" + id + ") grid(" + grid->getName() + ")"});
         }
     }
 }
+#endif
 
 std::tuple<nanovdb::BBoxR, std::shared_ptr<nanovdb::GridHandle<>>> GridManager::getGrid(const std::string& url, const std::string& gridName) const
 {
@@ -333,6 +371,24 @@ GridManager::Asset::Ptr GridManager::ensureAsset(const std::string& url)
     }
     mAssetsMutex.unlock();
     return asset;
+}
+
+bool GridManager::addGridFromMemory(const openvdb::GridBase::Ptr& grid, const std::string& url)
+{
+    auto           asset = ensureAsset(url);
+    GridAsset::Ptr gridAsset;
+
+    auto gridHdl = nanovdb::openToNanoVDB(grid);
+    if (!gridHdl) {
+        std::lock_guard<std::recursive_mutex> scopedLock(asset->mEventMutex);
+        asset->mHasError = true;
+        asset->mEvents.push_back(addEventMessage({EventMessage::Type::kError, "Can't generate \"" + url}));
+        return false;
+    } else {
+        gridAsset = ensureGridAsset(asset, url, AssetGridStatus::kLoaded, std::move(gridHdl));
+        addEventMessage({GridManager::EventMessage::Type::kInfo, "Successfully generated \"" + url});
+        return true;
+    }
 }
 
 bool GridManager::addGridsFromInternal(const std::string& url, const std::string& fragment)
